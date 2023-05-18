@@ -6,14 +6,16 @@ pub struct Map<K, O, V> {
     ordered_keys: BTreeMap<O, HashSet<K>>,
 }
 
-impl<K: Clone + Eq + Hash, O: Clone + Ord, V> Map<K, O, V> {
+impl<K, O, V> Map<K, O, V> {
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
             ordered_keys: BTreeMap::new(),
         }
     }
+}
 
+impl<K: Clone + Eq + Hash, O: Clone + Ord, V> Map<K, O, V> {
     fn remove_ordered_key(&mut self, order: &O, key: &K) {
         let keys = self.ordered_keys.get_mut(&order).unwrap();
         assert!(keys.remove(key));
