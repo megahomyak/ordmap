@@ -31,7 +31,7 @@ impl<K: Clone + Eq + Hash, O: Clone + Ord, V> Map<K, O, V> {
         Some((order, value))
     }
 
-    /// Removes entries with the smallest order value.
+    /// Removes entries with the smallest order value. Items in the result are not ordered.
     pub fn remove_smallest(&mut self) -> Option<(O, Vec<(K, V)>)> {
         let (order, keys) = self.ordered_keys.pop_first()?;
         let mut smallest = Vec::new();
@@ -42,7 +42,7 @@ impl<K: Clone + Eq + Hash, O: Clone + Ord, V> Map<K, O, V> {
         Some((order, smallest))
     }
 
-    /// Returns references to entries with the smallest order value.
+    /// Returns references to entries with the smallest order value. The references are unordered.
     pub fn peek_smallest(&self) -> Option<(&O, Vec<(&K, &V)>)> {
         let (order, keys) = self.ordered_keys.first_key_value()?;
         let mut smallest = Vec::new();
@@ -74,6 +74,21 @@ impl<K: Clone + Eq + Hash, O: Clone + Ord, V> Map<K, O, V> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn sort<O, T: Ord, F: FnOnce(&mut O) -> &mut Vec<T>>(mut value: O, grabber: F) -> O {
+        grabber(&mut value).sort();
+        value
+    }
+
+    fn maybe_sort<O, T: Ord, F: FnOnce(&mut O) -> &mut Vec<T>>(
+        mut value: Option<O>,
+        grabber: F,
+    ) -> Option<O> {
+        if let Some(value) = &mut value {
+            grabber(value).sort();
+        }
+        value
+    }
 
     #[test]
     fn it_works() {
@@ -127,15 +142,21 @@ mod tests {
         );
 
         assert_eq!(
-            map.peek_smallest(),
-            Some((&2, vec![(&6, &"c"), (&7, &"d")]))
+            maybe_sort(map.peek_smallest(), |r| &mut r.1),
+            Some((&2, sort(vec![(&6, &"c"), (&7, &"d")], |v| v)))
         );
 
-        assert_eq!(map.remove_smallest(), Some((2, vec![(6, "c"), (7, "d")])));
+        assert_eq!(
+            maybe_sort(map.remove_smallest(), |r| &mut r.1),
+            Some((2, sort(vec![(6, "c"), (7, "d")], |v| v)))
+        );
         assert_eq!(map.ordered_keys, BTreeMap::from([(5, HashSet::from([5]))]));
         assert_eq!(map.values, HashMap::from([(5, (5, "b"))]));
 
-        assert_eq!(map.remove_smallest(), Some((5, vec![(5, "b")])));
+        assert_eq!(
+            maybe_sort(map.remove_smallest(), |r| &mut r.1),
+            Some((5, sort(vec![(5, "b")], |v| v)))
+        );
 
         assert!(map.values.is_empty());
         assert!(map.ordered_keys.is_empty());
