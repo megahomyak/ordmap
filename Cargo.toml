@@ -1,0 +1,10 @@
+[package]
+name = "ordmap"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+description = "A map ordered by value"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
